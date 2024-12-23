@@ -1,0 +1,122 @@
+version: "3.9"
+services:
+#  zookeeper:
+#    image: bitnami/zookeeper:latest
+#    ports:
+#      - "2181:2181"
+#    environment:
+#      - ALLOW_ANONYMOUS_LOGIN=yes
+#
+#  kafka:
+#    image: bitnami/kafka:latest
+#    environment:
+#      - KAFKA_BROKER_ID=1
+#      - KAFKA_ZOOKEEPER_CONNECT=zookeeper:2181
+#      - ALLOW_PLAINTEXT_LISTENER=yes
+#      - KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://kafka:9092
+#    depends_on:
+#      - zookeeper
+#    ports:
+#      - "9092:9092"
+#
+#  kafka-ui-1:
+#    image: provectuslabs/kafka-ui:latest
+#    container_name: kafka-ui-1
+#    ports:
+#      - "8080:8080"
+#    environment:
+#      KAFKA_CLUSTERS_0_NAME: local
+#      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:9092
+#      KAFKA_CLUSTERS_0_ZOOKEEPER: zookeeper:2181
+#    depends_on:
+#      - kafka
+#      - zookeeper
+
+  mongo:
+    image: mongo:5.0
+    container_name: mongo
+    restart: always
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+
+  users:
+    build: ./backend/users
+    container_name: users
+    restart: always
+    depends_on:
+      - mongo
+    environment:
+      MONGO_URL: mongodb://mongo:27017
+    ports:
+      - "8001:8001"
+
+  booking:
+    build: ./backend/booking
+    container_name: booking
+    restart: always
+    depends_on:
+      - mongo
+    environment:
+      MONGO_URL: mongodb://mongo:27017
+    ports:
+      - "8002:8002"
+
+  order:
+    build: ./backend/order
+    container_name: order
+    restart: always
+    depends_on:
+      - mongo
+    environment:
+      MONGO_URL: mongodb://mongo:27017
+    ports:
+      - "8003:8003"
+
+  dictionaries:
+    build: ./backend/dictionaries
+    container_name: dictionaries
+    restart: always
+    ports:
+      - "8004:8004"
+
+  gateway:
+    build: ./backend/gateway
+    container_name: gateway
+    restart: always
+    depends_on:
+      - users
+      - booking
+      - order
+      - dictionaries
+    ports:
+      - "8000:8000"
+    environment:
+      # Adjust if needed
+      USERS_SERVICE_URL: http://users:8001
+      BOOKING_SERVICE_URL: http://booking:8002
+      ORDER_SERVICE_URL: http://order:8003
+      DICT_SERVICE_URL: http://dictionaries:8004
+      MONGO_URL: mongodb://mongo:27017
+
+#  client_app:
+#    build: ./frontend/client_app
+#    container_name: client_app
+#    restart: always
+#    depends_on:
+#      - gateway
+#    ports:
+#      - "3000:80"
+#
+#  airline_app:
+#    build: ./frontend/airline_app
+#    container_name: airline_app
+#    restart: always
+#    depends_on:
+#      - gateway
+#    ports:
+#      - "3001:80"
+
+volumes:
+  mongo_data:
