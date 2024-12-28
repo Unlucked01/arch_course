@@ -23,6 +23,7 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
 class User(BaseModel):
     username: str
+    password: str
     email: Optional[str] = None
     full_name: Optional[str] = None
     disabled: Optional[bool] = None

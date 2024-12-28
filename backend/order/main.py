@@ -120,8 +120,7 @@ async def get_all_orders_admin(request: Request):
 
     cursor = orders_collection.find({})
     orders = await cursor.to_list(None)
-    return [Order(**o) for
-            o in orders]
+    return [Order(**o) for o in orders]
 
 
 @app.get("/orders/")
@@ -132,7 +131,5 @@ async def get_user_orders(request: Request):
 
     cursor = orders_collection.find({"user_id": user_id})
     orders = await cursor.to_list(None)
-    return [
-        Order(**o)
-        for o in orders]
+    return [Order(**o) for o in orders]
 

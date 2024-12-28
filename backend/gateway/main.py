@@ -5,6 +5,7 @@ from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 import httpx
 from jose import jwt, JWTError
 from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
 
 app = FastAPI(
     title="API Gateway",
@@ -52,8 +53,13 @@ async def admin_role_dependency(request: Request):
         raise HTTPException(status_code=403, detail="Forbidden: Admin access required")
 
 
+class User(BaseModel):
+    username: str
+    password: str
+
+
 @app.post("/auth/register")
-async def gateway_register(user: OAuth2PasswordRequestForm = Depends()):
+async def gateway_register(user: User = Depends()):
     async with httpx.AsyncClient() as client:
         resp = await client.post(f"{USERS_SERVICE_URL}/users/register",
                                  json={"username": user.username, "password": user.password})
@@ -63,7 +69,7 @@ async def gateway_register(user: OAuth2PasswordRequestForm = Depends()):
 
 
 @app.post("/auth/login")
-async def gateway_login(form_data: OAuth2PasswordRequestForm = Depends()):
+async def gateway_login(form_data: User = Depends()):
     async with httpx.AsyncClient() as client:
         resp = await client.post(
             f"{USERS_SERVICE_URL}/token",
@@ -122,16 +128,6 @@ async def book_ticket(flight_id: str, price: float, payload=Depends(validate_tok
             status_code=resp.status_code,
             detail=resp.json().get("detail", "Error booking ticket")
         )
-
-
-@app.get("/booking/admin/tickets")
-async def get_all_tickets_admin(payload=Depends(validate_token)):
-    async with httpx.AsyncClient() as client:
-        resp = await client.get(
-            f"{BOOKING_SERVICE_URL}/admin/tickets",
-            headers={"X-User-Id": payload["sub"], "X-User-Role": payload["role"]}
-        )
-    return resp.json()
 
 
 @app.patch("/booking/tickets/{ticket_id}/pay")
